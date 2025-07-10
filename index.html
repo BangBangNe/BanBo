@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini Game Bắn Gà</title>
+  <style>
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #222;
+  font-family: Arial, sans-serif;
+}
+
+canvas {
+  background: #87CEEB;
+  display: block;
+  border: 3px solid white;
+  box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+
+#score {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 20px;
+  color: white;
+  background: rgba(0,0,0,0.6);
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+  </style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<div id="score">Điểm: 0</div>
+
+
+
+
+<script>
+
+// Tải hình ảnh
+const chickenImg = new Image();
+chickenImg.src = 'Bo.png';
+
+const gunImg = new Image();
+gunImg.src = 'sung.png';
+
+
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let bullets = [];
+  let chickens = [];
+  let score = 0;
+
+const gun = {
+  x: canvas.width / 2,
+  y: canvas.height - 70,
+  width: 50,
+  height: 60
+};
+  function drawGun() {
+     ctx.drawImage(gunImg, gun.x - gun.width / 2, gun.y, gun.width, gun.height);
+  }
+
+  function drawBullet(bullet) {
+    ctx.fillStyle = 'red';
+    ctx.fillRect(bullet.x - 2, bullet.y, 4, 10);
+  }
+
+  function drawChicken(chicken) {
+  ctx.drawImage(chickenImg, chicken.x - 20, chicken.y - 20, 40, 40);
+  }
+
+  function updateBullets() {
+    bullets = bullets.filter(bullet => bullet.y > 0);
+    bullets.forEach(bullet => {
+      bullet.y -= 7;
+    });
+  }
+
+  function updateChickens() {
+    chickens.forEach(chicken => {
+      chicken.x += chicken.vx;
+      chicken.y += chicken.vy;
+
+      // Đổi hướng khi chạm biên
+      if (chicken.x < 20 || chicken.x > canvas.width - 20) chicken.vx *= -1;
+      if (chicken.y < 20 || chicken.y > canvas.height / 2) chicken.vy *= -1;
+
+      // Né vị trí súng
+      const dx = chicken.x - gun.x;
+      if (Math.abs(dx) < 50) {
+        chicken.x += dx > 0 ? 3 : -3; // né sang phải/trái
+      }
+    });
+  }
+
+  function checkCollision() {
+    bullets.forEach((bullet, bIndex) => {
+      chickens.forEach((chicken, cIndex) => {
+        const dx = bullet.x - chicken.x;
+        const dy = bullet.y - chicken.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 20) {
+          bullets.splice(bIndex, 1);
+          chickens.splice(cIndex, 1);
+          score += 10;
+          document.getElementById('score').innerText = `Điểm: ${score}`;
+        }
+      });
+    });
+  }
+
+  function spawnChicken() {
+    const chicken = {
+      x: Math.random() * (canvas.width - 40) + 20,
+      y: 50 + Math.random() * 100,
+      vx: (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 2),
+      vy: (Math.random() < 0.5 ? -1 : 1) * (1 + Math.random())
+    };
+    chickens.push(chicken);
+  }
+
+  function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawGun();
+    bullets.forEach(drawBullet);
+    chickens.forEach(drawChicken);
+    updateBullets();
+    updateChickens();
+    checkCollision();
+    requestAnimationFrame(gameLoop);
+  }
+
+  canvas.addEventListener('click', () => {
+    bullets.push({ x: gun.x, y: gun.y });
+  });
+
+  document.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    gun.x = e.clientX - rect.left;
+  });
+
+  setInterval(spawnChicken, 1500);
+
+  gameLoop();
+</script>
+
+
+</body>
+</html>
